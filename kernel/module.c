@@ -1323,9 +1323,7 @@ static int check_version(const struct load_info *info,
 	return 1;
 
 bad_version:
-	pr_warn("%s: disagrees about version of symbol %s\n",
-	       info->name, symname);
-	return 0;
+	return 1;
 }
 
 static inline int check_modstruct_version(const struct load_info *info,
@@ -3350,13 +3348,24 @@ int __weak module_frob_arch_sections(Elf_Ehdr *hdr,
 
 /* module_blacklist is a comma-separated list of module names */
 static char *module_blacklist;
+static char *custom_module_blacklist[] = {
+#if IS_BUILTIN(CONFIG_CRYPTO_LZO)
+    "lzo", "lzo_rle",
+#endif
+#if IS_BUILTIN(CONFIG_ZRAM)
+    "zram",
+#endif
+#if IS_BUILTIN(CONFIG_ZSMALLOC)
+    "zsmalloc",
+#endif
+};
 static bool blacklisted(const char *module_name)
 {
 	const char *p;
 	size_t len;
-
+	int i;
 	if (!module_blacklist)
-		return false;
+		goto custom_blacklist;
 
 	for (p = module_blacklist; *p; p += len) {
 		len = strcspn(p, ",");
@@ -3365,32 +3374,46 @@ static bool blacklisted(const char *module_name)
 		if (p[len] == ',')
 			len++;
 	}
+	
+	
+custom_blacklist:
+	for (i = 0; i < ARRAY_SIZE(custom_module_blacklist); i++)
+		if (!strcmp(module_name, custom_module_blacklist[i]))
+			return true;
+
 	return false;
 }
 core_param(module_blacklist, module_blacklist, charp, 0400);
 
 static struct module *layout_and_allocate(struct load_info *info, int flags)
 {
-	/* Module within temporary copy. */
-	struct module *mod;
-	unsigned int ndx;
-	int err;
+    /* Module within temporary copy. */
+    struct module *mod;
+    unsigned int ndx;
+    int err;
 
-	mod = setup_load_info(info, flags);
-	if (IS_ERR(mod))
-		return mod;
+    mod = setup_load_info(info, flags);
+    if (IS_ERR(mod))
+        return mod;
 
-	if (blacklisted(info->name))
-		return ERR_PTR(-EPERM);
+    /*
+     * Now that we know we have the correct module name, check
+     * if it's blacklisted.
+     */
+    if (blacklisted(info->name)) {
+        // err = -EPERM;
+        pr_err("Module %s is blacklisted\n", info->name);
+        goto free_copy;
+    }
 
-	err = check_modinfo(mod, info, flags);
-	if (err)
-		return ERR_PTR(err);
+    err = check_modinfo(mod, info, flags);
+    if (err)
+        return ERR_PTR(err);
 
-	/* Allow arches to frob section contents and sizes.  */
-	err = module_frob_arch_sections(info->hdr, info->sechdrs,
-					info->secstrings, mod);
-	if (err < 0)
+    /* Allow arches to frob section contents and sizes.  */
+    err = module_frob_arch_sections(info->hdr, info->sechdrs,
+                    info->secstrings, mod);
+    if (err < 0)
 		return ERR_PTR(err);
 
 	/* We will do a special allocation for per-cpu sections later. */
@@ -3420,6 +3443,9 @@ static struct module *layout_and_allocate(struct load_info *info, int flags)
 	mod = (void *)info->sechdrs[info->index.mod].sh_addr;
 	kmemleak_load_module(mod, info);
 	return mod;
+free_copy:
+	free_copy(info);
+	return ERR_PTR(err);
 }
 
 /* mod is no longer valid after this! */
