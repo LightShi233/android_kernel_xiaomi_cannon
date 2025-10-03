@@ -78,7 +78,7 @@ static bool timedwait_cycle_count_active(struct kbase_device *kbdev)
 {
 	bool success = false;
 	const unsigned int timeout = 100;
-	const unsigned long remaining = jiffies + msecs_to_jiffies(timeout);
+	unsigned long remaining = jiffies + msecs_to_jiffies(timeout);
 
 	while (time_is_after_jiffies(remaining)) {
 		if ((kbase_reg_read(kbdev, GPU_CONTROL_REG(GPU_STATUS)) &
