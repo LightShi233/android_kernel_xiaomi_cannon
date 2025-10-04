@@ -27,7 +27,7 @@ export KBUILD_BUILD_VERSION=1
 
 mkdir -p out
 make O=out ARCH=arm64 $DEFCONFIG
-make  -j$(nproc --all) O=out \
+make  -j2 O=out \
 					  ARCH=arm64 \
 					  CC=clang \
 					  LD=ld.lld \
