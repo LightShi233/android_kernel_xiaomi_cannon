@@ -10,6 +10,14 @@ on:
         description: 'KernelSU branch/tag to checkout (e.g. susfs-main, v1.0)'
         required: false
         default: 'susfs-main'
+      ksu_source:
+        description: 'Choose KernelSU source'
+        required: false
+        default: 'sukisu'
+        type: choice
+        options:
+          - sukisu
+          - rsuntk
 
 jobs:
   build:
@@ -43,10 +51,22 @@ jobs:
             wget \
             git
 
+      - name: Configure KernelSU for rsuntk source
+        if: github.event.inputs.ksu_source == 'rsuntk'
+        run: |
+          echo "CONFIG_KSU_MANUAL_HOOK=y" >> arch/arm64/configs/cannon_defconfig
+          sed -i 's/CONFIG_KSU_TRACEPOINT_HOOK=y/CONFIG_KSU_TRACEPOINT_HOOK=n/g' arch/arm64/configs/cannon_defconfig
+
       - name: Inject KernelSU using setup.sh
         run: |
           BRANCH="${{ github.event.inputs.susfs_branch || 'susfs-main' }}"
-          curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$BRANCH"
+          KSU_SOURCE="${{ github.event.inputs.ksu_source || 'sukisu' }}"
+          
+          if [ "$KSU_SOURCE" = "rsuntk" ]; then
+            curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s "$BRANCH"
+          else
+            curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$BRANCH"
+          fi
 
       - name: Run build.sh
         run: |
@@ -60,4 +80,4 @@ jobs:
           path: |
             out/arch/arm64/boot/Image
             out/arch/arm64/boot/Image.gz-dtb
-          if-no-files-found: error  # 如果没找到文件就报错，便于调试
+          if-no-files-found: error
