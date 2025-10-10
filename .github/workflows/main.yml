@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       susfs_branch:
-        description: 'KernelSU branch/tag to checkout (e.g. susfs-main, v1.0)'
+        description: 'KernelSU branch/tag to checkout (e.g. susfs-main, susfs-test)'
         required: false
         default: 'susfs-main'
       ksu_source:
@@ -50,6 +50,17 @@ jobs:
             rsync \
             wget \
             git
+
+      # 添加工具链缓存
+      - name: Cache toolchain
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/toolchain
+          key: toolchain-v2-${{ runner.os }}-clang-22.0.0git-20250920-${{ hashFiles('**/build.sh') }}
+          restore-keys: |
+            toolchain-v2-${{ runner.os }}-clang-22.0.0git-20250920-
+            toolchain-v2-${{ runner.os }}-
 
       - name: Configure KernelSU for rsuntk source
         if: github.event.inputs.ksu_source == 'rsuntk'
