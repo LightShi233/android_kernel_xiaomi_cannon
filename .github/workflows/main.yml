@@ -2,22 +2,14 @@ name: Build Kernel with KernelSU
 
 on:
   schedule:
-    - cron: '0 0 */3 * *'
+    - cron: "0 0 */3 * *"
 
   workflow_dispatch:
     inputs:
       susfs_branch:
-        description: 'KernelSU branch/tag to checkout (e.g. susfs-main, susfs-test)'
+        description: "KernelSU branch/tag to checkout (e.g. main , susfs-rksu-master)"
         required: false
-        default: 'susfs-main'
-      ksu_source:
-        description: 'Choose KernelSU source'
-        required: false
-        default: 'sukisu'
-        type: choice
-        options:
-          - sukisu
-          - rsuntk
+        default: "main"
 
 jobs:
   build:
@@ -62,22 +54,10 @@ jobs:
             toolchain-v2-${{ runner.os }}-clang-22.0.0git-20250920-
             toolchain-v2-${{ runner.os }}-
 
-      - name: Configure KernelSU for rsuntk source
-        if: github.event.inputs.ksu_source == 'rsuntk'
-        run: |
-          echo "CONFIG_KSU_MANUAL_HOOK=y" >> arch/arm64/configs/cannon_defconfig
-          sed -i 's/CONFIG_KSU_TRACEPOINT_HOOK=y/CONFIG_KSU_TRACEPOINT_HOOK=n/g' arch/arm64/configs/cannon_defconfig
-
       - name: Inject KernelSU using setup.sh
         run: |
-          BRANCH="${{ github.event.inputs.susfs_branch || 'susfs-main' }}"
-          KSU_SOURCE="${{ github.event.inputs.ksu_source || 'sukisu' }}"
-          
-          if [ "$KSU_SOURCE" = "rsuntk" ]; then
-            curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s "$BRANCH"
-          else
-            curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$BRANCH"
-          fi
+          BRANCH="${{ github.event.inputs.susfs_branch || 'susfs-rksu-master' }}"
+          curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s "$BRANCH"
 
       - name: Run build.sh
         run: |
