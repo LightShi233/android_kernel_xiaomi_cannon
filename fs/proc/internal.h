@@ -287,6 +287,9 @@ struct proc_maps_private {
 	struct inode *inode;
 	struct task_struct *task;
 	struct mm_struct *mm;
+#ifdef CONFIG_PROC_PAGE_MONITOR
+	struct mem_size_stats *rollup;
+#endif
 #ifdef CONFIG_MMU
 	struct vm_area_struct *tail_vma;
 #endif
