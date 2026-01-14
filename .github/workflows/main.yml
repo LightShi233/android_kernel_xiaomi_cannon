@@ -56,7 +56,7 @@ jobs:
 
       - name: Inject KernelSU using setup.sh
         run: |
-          BRANCH="${{ github.event.inputs.susfs_branch || 'susfs-rksu-master' }}"
+          BRANCH="${{ github.event.inputs.susfs_branch || 'main' }}"
           curl -LSs "https://raw.githubusercontent.com/rsuntk/KernelSU/main/kernel/setup.sh" | bash -s "$BRANCH"
 
       - name: Run build.sh
