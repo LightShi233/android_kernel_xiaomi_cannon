@@ -54,6 +54,16 @@ jobs:
             toolchain-v2-${{ runner.os }}-clang-22.0.0git-20250920-
             toolchain-v2-${{ runner.os }}-
 
+      - name: Cache out directory
+        id: cache-out
+        uses: actions/cache@v4
+        with:
+          path: out
+          key: out-${{ runner.os }}-${{ github.event.inputs.susfs_branch || 'main' }}-${{ github.sha }}
+          restore-keys: |
+            out-${{ runner.os }}-${{ github.event.inputs.susfs_branch || 'main' }}-
+            out-${{ runner.os }}-
+
       - name: Inject KernelSU using setup.sh
         run: |
           BRANCH="${{ github.event.inputs.susfs_branch || 'main' }}"
