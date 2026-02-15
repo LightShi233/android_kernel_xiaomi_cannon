@@ -16,7 +16,7 @@ export KBUILD_BUILD_VERSION=1
 
 [ -d "$CLANG_DIR" ] || {
   mkdir -p "$CLANG_DIR"
-  CLANG_URL="https://github.com/ZyCromerZ/Clang/releases/download/22.0.0git-20250920-release/Clang-22.0.0git-20250920.tar.gz"
+  CLANG_URL="https://github.com/ZyCromerZ/Clang/releases/download/23.0.0git-20260130-release/Clang-23.0.0git-20260130.tar.gz"
   wget -qO clang.tar.gz "$CLANG_URL"
   tar -xzf clang.tar.gz -C $CLANG_DIR
 }
